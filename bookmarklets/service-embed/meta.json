@@ -1,0 +1,13 @@
+{
+    "$schema": "../meta_schema.json",
+    "short_title": "Service Embed",
+    "title": "Embed Service Into Template Composer",
+    "header_subtext": "This bookmarklet will embed a service from a given template into the template currently being edited",
+    "bookmarklet_link_text": "Embed Service",
+    "include_instructions": true,
+    "custom_instructions": [
+        "Drag the link to your bookmarks bar",
+        "Open the template edit page you want to embed a service into",
+        "Click on the bookmarklet"
+    ]
+}

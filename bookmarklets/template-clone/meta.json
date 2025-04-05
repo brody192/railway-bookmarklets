@@ -1,0 +1,13 @@
+{
+    "$schema": "../meta_schema.json",
+    "short_title": "Template Clone",
+    "title": "Template Clone",
+    "header_subtext": "This bookmarklet will clone a template into your personal templates",
+    "bookmarklet_link_text": "Clone Template",
+    "include_instructions": true,
+    "custom_instructions": [
+        "Drag the link to your bookmarks bar",
+        "Open the template page you wish to clone",
+        "Click on the bookmarklet"
+    ]
+}

@@ -1,0 +1,13 @@
+{
+    "short_title": "Usage Downloader",
+    "title": "Usage Downloader bookmarklet",
+    "header_subtext": "This will download usage for a given month as an easy to read json document",
+    "bookmarklet_link_text": "Download Usage",
+    "include_instructions": true,
+    "custom_instructions": [
+        "Drag the link to your bookmarks bar",
+        "Open the usage page under the desired Railway account",
+        "Click on the bookmarklet"
+    ],
+    "disclaimer": "The creator of this bookmarklet assumes no responsibility for the accuracy of the data provided"
+}

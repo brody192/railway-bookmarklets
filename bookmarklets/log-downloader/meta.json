@@ -1,0 +1,7 @@
+{
+    "short_title": "Log Downloader",
+    "title": "Download Logs bookmarklet",
+    "header_subtext": "This bookmarklet will download build, deploy, or http logs from Railway",
+    "bookmarklet_link_text": "Download Logs",
+    "include_instructions": true
+}

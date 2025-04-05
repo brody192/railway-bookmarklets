@@ -1,0 +1,12 @@
+{
+    "short_title": "Service Embed v1",
+    "title": "Embed Service Into v1 Template Composer",
+    "header_subtext": "This bookmarklet will embed a service from a given v1 template into the v1 template currently being edited",
+    "bookmarklet_link_text": "Embed Service v1",
+    "include_instructions": true,
+    "custom_instructions": [
+        "Drag the link to your bookmarks bar",
+        "Open the template edit page you want to embed a service into",
+        "Click on the bookmarklet"
+    ]
+}

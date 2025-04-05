@@ -1,0 +1,13 @@
+{
+    "$schema": "../meta_schema.json",
+    "short_title": "View Default Region",
+    "title": "View Default Region",
+    "header_subtext": "This bookmarklet will display the default region for your team",
+    "bookmarklet_link_text": "View Default Region",
+    "include_instructions": true,
+    "custom_instructions": [
+        "Drag the link to your bookmarks bar",
+        "Open your Railway dashboard",
+        "Click on the bookmarklet"
+    ]
+}

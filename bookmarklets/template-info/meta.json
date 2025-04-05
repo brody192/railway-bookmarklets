@@ -1,0 +1,13 @@
+{
+    "$schema": "../meta_schema.json",
+    "short_title": "Template Info",
+    "title": "Template Info",
+    "header_subtext": "This bookmarklet will show you the template in json format",
+    "bookmarklet_link_text": "Template Info",
+    "include_instructions": true,
+    "custom_instructions": [
+        "Drag the link to your bookmarks bar",
+        "Open the template page you wish to view the json for",
+        "Click on the bookmarklet"
+    ]
+}

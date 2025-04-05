@@ -1,0 +1,7 @@
+{
+    "short_title": "Service Redeploy",
+    "title": "Service Redeploy bookmarklet",
+    "header_subtext": "This will trigger a redeploy from the source on the service",
+    "bookmarklet_link_text": "Service Redeploy",
+    "include_instructions": true
+}

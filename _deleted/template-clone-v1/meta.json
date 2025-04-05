@@ -1,0 +1,12 @@
+{
+    "short_title": "v1 Template Clone",
+    "title": "v1 Template Clone",
+    "header_subtext": "This bookmarklet will clone a v1 template into your personal templates",
+    "bookmarklet_link_text": "Clone v1 Template",
+    "include_instructions": true,
+    "custom_instructions": [
+        "Drag the link to your bookmarks bar",
+        "Open the template page you wish to clone",
+        "Click on the bookmarklet"
+    ]
+}

@@ -1,0 +1,7 @@
+{
+    "short_title": "Image Deploy",
+    "title": "Image Deploy bookmarklet",
+    "header_subtext": "This will open a prompt asking for an image to deploy",
+    "bookmarklet_link_text": "Image Deploy",
+    "include_instructions": true
+}

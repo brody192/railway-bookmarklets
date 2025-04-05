@@ -1,0 +1,52 @@
+{{ define "inc" }}{{ len (printf "%*s " . "") }}{{ end }}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>{{ .ShortTitle }}</title>
+    <link rel="icon" type="image/png" sizes="16x16" href="https://railway.com/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://railway.com/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="https://railway.com/favicon-96x96.png">
+    <link rel="shortcut icon" href="https://railway.com/favicons/favicon-dark.ico" type="image/x-icon" id="favicon">
+    <meta name="color-scheme" content="light dark" />
+    <link rel="stylesheet" href="/assets/style.css">
+</head>
+
+<body>
+    <div class="area">
+        {{ if .IncludeInstructions }}
+        <h1>{{ .HeaderSubtext }}</h1>
+        <h1>Drag this link to your bookmarks bar</h1>
+        <h1 class="slim font-large">↓</h1>
+        {{ end }}
+        <a id="install">{{.BookmarkletLinkText}}</a>
+        {{ if .IncludeInstructions }}
+        <h1>Usage:</h1>
+        {{ if .CustomInstructions }}
+        {{ range $index, $element := .CustomInstructions }}
+        <h2>{{ template "inc" $index }}. {{ $element }}</h2>
+        {{ end }}
+        {{ else }}
+        <h2>1. Drag the link to your bookmarks bar</h2>
+        <h2>2. Open the desired service</h2>
+        <h2>3. Click on the bookmarklet</h2>
+        {{ end }}
+        {{ end }}
+        <br>
+        <h2>Source code available <a href="bookmarklet.js">here</a></h2>
+        <h2>Minified source code available <a href="bookmarklet.min.js" target="_blank">here</a></h2>
+        {{ if .IncludeInstructions }}
+        <h2><a href="https://bookmarklets.org/what-is-a-bookmarklet/" target="_blank">What is a bookmarklet?</a></h2>
+        {{ end }}
+        {{ if .Disclaimer }}
+        <p>{{ .Disclaimer }}</p>
+        {{ end }}
+    </div>
+    <script src="/assets/script.js"></script>
+</body>
+
+</html>

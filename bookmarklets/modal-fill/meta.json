@@ -1,0 +1,7 @@
+{
+    "$schema": "../meta_schema.json",
+    "short_title": "Modal Fill",
+    "title": "Modal Fill bookmarklet",
+    "bookmarklet_link_text": "Modal Fill",
+    "include_instructions": false
+}

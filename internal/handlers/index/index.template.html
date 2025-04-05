@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Bookmarklets Index</title>
+    <link rel="icon" type="image/png" sizes="16x16" href="https://railway.com/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://railway.com/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="https://railway.com/favicon-96x96.png">
+    <link rel="shortcut icon" href="https://railway.com/favicons/favicon-dark.ico" type="image/x-icon" id="favicon">
+    <link rel="stylesheet" href="/assets/index.css">
+</head>
+
+<body>
+    <ul>
+        {{range .Routes}}
+        <li>
+            {{if .Title}}
+            <a class="paths" href="{{.Href}}" target="_blank">{{.Title}}</a>
+            {{else}}
+            <a class="paths" href="{{.Href}}" target="_blank">{{.Path}}</a>
+            {{end}}
+        </li>
+        </br>
+        {{end}}
+    </ul>
+</body>
+
+</html>

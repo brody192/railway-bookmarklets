@@ -1,0 +1,12 @@
+{
+    "short_title": "Set Service Icon",
+    "title": "Set Service Icon v1",
+    "header_subtext": "Sets a service icon for the specified service in the v1 template composer",
+    "bookmarklet_link_text": "Set Service Icon",
+    "include_instructions": true,
+    "custom_instructions": [
+        "Drag the link to your bookmarks bar",
+        "Open the template edit page",
+        "Click on the bookmarklet"
+    ]
+}
