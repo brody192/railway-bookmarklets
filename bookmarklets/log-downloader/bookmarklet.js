@@ -167,7 +167,7 @@ javascript: (async () => {
         return;
     };
 
-    const maxLogLines = 2000
+    const maxLogLines = 2000;
 
     ws.onmessage = function (wsMsg) {
         var msg = JSON.parse(wsMsg.data);
