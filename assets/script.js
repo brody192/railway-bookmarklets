@@ -14,6 +14,10 @@
 
         let js = await jsReq.text();
 
+        if (!js.startsWith("javascript:")) {
+            js = "javascript:" + js;
+        }
+
         error = false;
 
         document.querySelector("#install").setAttribute("href", js);
