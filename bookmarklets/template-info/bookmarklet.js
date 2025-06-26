@@ -4,18 +4,36 @@ javascript: (async () => {
         return;
     };
 
-    const templateRegex = /^\/template\/(.{3,})$/;
+    const templatePageRegex = /^\/(?:template|deploy|new\/template)\/(.{3,})$/;
 
     const pathname = window.location.pathname;
 
-    const templateMatch = templateRegex.exec(pathname);
+    const templatePageMatch = templatePageRegex.exec(pathname);
 
-    if (templateMatch == null) {
-        alert("No template could found, do you have a template page open?");
+    if (templatePageMatch == null) {
+        alert("No template page found, do you have a template page open?");
         return;
     };
 
-    const templateId = templateMatch[1];
+    const nextPageDataElement = document.getElementById("__NEXT_DATA__");
+
+    if (nextPageDataElement == null) {
+        alert("No next page data found, perhaps this bookmarklet needs updating?");
+        return;
+    };
+
+    const nextPageDataInnerText = nextPageDataElement.innerText;
+
+    const templateCodeRegex = /"code":"(.{3,}?)",/;
+
+    const templateCodeMatch = templateCodeRegex.exec(nextPageDataInnerText);
+
+    if (templateCodeMatch == null) {
+        alert("No template code found, perhaps this bookmarklet needs updating?");
+        return;
+    };
+
+    const templateId = templateCodeMatch[1];
 
     const gqlReq = async (options) => {
         const req = await fetch(`https://backboard.railway.com/graphql/internal?q=${options.operationName}`, {
@@ -52,6 +70,10 @@ javascript: (async () => {
         return [res.data[dataName], null];
     };
 
+    // why are we making a call to the api to get the template details despite the details being part of the __NEXT_DATA__ you may ask?
+    // two reasons..
+    // __NEXT_DATA__ is cached, this api call wont be.
+    // depending on the size of the json __NEXT_DATA__ will be truncated.
     const [template, templateError] = await gqlReq({
         operationName: "templateDetail",
         dataName: "template",

@@ -23,6 +23,15 @@ javascript: (async () => {
             return;
         };
 
+        const workspaceLocalStorageValue = localStorage.getItem("@railway/dashboard/workspace");
+
+        if (workspaceLocalStorageValue == null) {
+            alert("Current workspace ID not found, perhaps this bookmarklet needs updating?");
+            return;
+        };
+
+        const teamId = workspaceLocalStorageValue.split('"').join('');
+
         const gqlReq = async (options) => {
             const req = await fetch(`https://backboard.railway.com/graphql/internal?q=${options.operationName}`, {
                 headers: {
@@ -167,8 +176,6 @@ javascript: (async () => {
 
         newSerializedConfig.services[uuid]['volumeMounts'] = newVolumeMounts;
 
-        const teamId = (params.has("teamId") == true) ? params.get("teamId") : null;
-
         htmlDoc.style.cursor = "wait";
 
         const [templateUpdateV2, templateUpdateV2Error] = await gqlReq({
@@ -191,7 +198,7 @@ javascript: (async () => {
             return;
         };
 
-        alert(`Service ${serviceToEmbed} embeded successfully`);
+        alert(`Service ${serviceToEmbed} embedded successfully`);
 
         location.reload();
     })();
