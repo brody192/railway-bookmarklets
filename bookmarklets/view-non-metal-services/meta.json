@@ -1,0 +1,13 @@
+{
+    "$schema": "../meta_schema.json",
+    "short_title": "View non-metal services",
+    "title": "View non-metal services",
+    "header_subtext": "This bookmarklet will display all non-metal services across all of your workspaces",
+    "bookmarklet_link_text": "View non-metal services",
+    "include_instructions": true,
+    "custom_instructions": [
+        "Drag the link to your bookmarks bar",
+        "Open your Railway dashboard",
+        "Click on the bookmarklet"
+    ]
+}
