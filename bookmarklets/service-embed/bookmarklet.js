@@ -1,6 +1,4 @@
 javascript: (async () => {
-    const htmlDoc = document.querySelector("html");
-
     await (async () => {
         if (window.location.origin != "https://railway.com") {
             alert("This bookmarklet is designed to be used with Railway");
@@ -121,29 +119,81 @@ javascript: (async () => {
         const defaultService = (sourceServices.length == 1) ? sourceServices[0] : undefined;
 
         let sourceServiceList = "";
+        let servicesByNumber = {};
+
+        sourceServiceList += `[*] Add All Services (${sourceServices.length} services)\n`;
+        sourceServiceList += `---\n`;
 
         for (const [i, service] of sourceServices.entries()) {
-            sourceServiceList += `- ${service}`;
+            const num = i + 1;
+            servicesByNumber[num.toString()] = service;
+            sourceServiceList += `[${num}] ${service}`;
             if (i < sourceServices.length - 1) sourceServiceList += "\n";
         };
 
-        const serviceToEmbed = tryTrim(prompt(`Enter the service from the ${sourceTemplateName} template to embed into this template\n${sourceServiceList}`, defaultService));
-        if (serviceToEmbed == null) {
+        const serviceInput = tryTrim(prompt(`Enter service name(s), number(s), or * for all. Use commas for multiple (e.g., 1,3 or frontend,backend)\n${sourceServiceList}`, defaultService));
+        if (serviceInput == null) {
             alert("User canceled the prompt");
             return;
         };
 
-        if (sourceServices.includes(serviceToEmbed) == false) {
-            alert(`Service does not exist within the source template ${sourceTemplateName}`);
+        const isAddAll = serviceInput === "*" || serviceInput.toLowerCase() === "all";
+        
+        if (serviceInput.includes(",") && (serviceInput.includes("*") || serviceInput.toLowerCase().includes("all"))) {
+            alert(`Cannot mix "*" or "all" with other selections. Use "*" or "all" alone to add all services, or specify individual services.`);
             return;
         };
-
-        if (currentServices.includes(serviceToEmbed) == true) {
-            alert(`Current template ${currentTemplateName} already contains the service ${serviceToEmbed}`);
-            return;
+        
+        let servicesToEmbed = [];
+        
+        if (isAddAll) {
+            const conflictingServices = sourceServices.filter(service => currentServices.includes(service));
+            if (conflictingServices.length > 0) {
+                alert(`Cannot add all services. The following services already exist in ${currentTemplateName}:\n${conflictingServices.join(", ")}`);
+                return;
+            };
+            servicesToEmbed = sourceServices;
+        } else {
+            const selections = serviceInput.split(",").map(s => s.trim()).filter(s => s.length > 0);
+            
+            if (selections.length === 0) {
+                alert("No services selected");
+                return;
+            };
+            
+            for (const selection of selections) {
+                let serviceToEmbed = selection;
+                
+                if (servicesByNumber[selection]) {
+                    serviceToEmbed = servicesByNumber[selection];
+                };
+                
+                if (!sourceServices.includes(serviceToEmbed)) {
+                    alert(`Service "${selection}" does not exist within the source template ${sourceTemplateName}`);
+                    return;
+                };
+                
+                if (currentServices.includes(serviceToEmbed)) {
+                    alert(`Current template ${currentTemplateName} already contains the service ${serviceToEmbed}`);
+                    return;
+                };
+                
+                if (!servicesToEmbed.includes(serviceToEmbed)) {
+                    servicesToEmbed.push(serviceToEmbed);
+                };
+            };
         };
 
-        const proceed = confirm(`Proceed with embedding service ${serviceToEmbed} into this template?\nThis will clear any unsaved changes`);
+        let confirmMessage;
+        if (isAddAll) {
+            confirmMessage = `Proceed with embedding ALL ${servicesToEmbed.length} services into this template?\n\nServices to add:\n${servicesToEmbed.join(", ")}\n\nThis will clear any unsaved changes`;
+        } else if (servicesToEmbed.length > 1) {
+            confirmMessage = `Proceed with embedding ${servicesToEmbed.length} services into this template?\n\nServices to add:\n${servicesToEmbed.join(", ")}\n\nThis will clear any unsaved changes`;
+        } else {
+            confirmMessage = `Proceed with embedding service ${servicesToEmbed[0]} into this template?\nThis will clear any unsaved changes`;
+        };
+        
+        const proceed = confirm(confirmMessage);
         if (proceed == false) {
             alert("User canceled the prompt");
             return;
@@ -151,23 +201,30 @@ javascript: (async () => {
 
         let newSerializedConfig = currentTemplate.serializedConfig;
 
-        const uuid = crypto.randomUUID();
+        for (const serviceToEmbed of servicesToEmbed) {
+            const uuid = crypto.randomUUID();
 
-        newSerializedConfig.services[uuid] = sourceTemplate.serializedConfig.services[sourceServicesMap[serviceToEmbed]];
+            newSerializedConfig.services[uuid] = sourceTemplate.serializedConfig.services[sourceServicesMap[serviceToEmbed]];
 
-        let newVolumeMounts = {};
+            let newVolumeMounts = {};
 
-        for (const volume in newSerializedConfig.services[uuid].volumeMounts) {
-            newVolumeMounts[uuid] = {
-                "mountPath": newSerializedConfig.services[uuid].volumeMounts[volume].mountPath,
+            for (const volume in newSerializedConfig.services[uuid].volumeMounts) {
+                newVolumeMounts[uuid] = {
+                    "mountPath": newSerializedConfig.services[uuid].volumeMounts[volume].mountPath,
+                };
             };
+
+            delete newSerializedConfig.services[uuid].volumeMounts;
+
+            newSerializedConfig.services[uuid]['volumeMounts'] = newVolumeMounts;
         };
 
-        delete newSerializedConfig.services[uuid].volumeMounts;
+        const styleId = "railway-bookmarklet-cursor";
 
-        newSerializedConfig.services[uuid]['volumeMounts'] = newVolumeMounts;
-
-        htmlDoc.style.cursor = "wait";
+        const cursorStyle = document.createElement("style");
+        cursorStyle.id = styleId;
+        cursorStyle.innerHTML = "* { cursor: wait !important; }";
+        document.head.appendChild(cursorStyle);
 
         const [templateUpsertConfig, templateUpsertConfigError] = await gqlReq({
             operationName: "templateUpsertConfig",
@@ -184,14 +241,26 @@ javascript: (async () => {
         });
 
         if (templateUpsertConfigError != null) {
+            document.getElementById(styleId)?.remove();
             alert(`Error updating template ${currentTemplateName}` + "\n" + templateUpsertConfigError);
             return;
         };
 
-        alert(`Service ${serviceToEmbed} embedded successfully`);
+        let successMessage;
+        if (isAddAll) {
+            successMessage = `All ${servicesToEmbed.length} services embedded successfully`;
+        } else if (servicesToEmbed.length > 1) {
+            successMessage = `${servicesToEmbed.length} services embedded successfully: ${servicesToEmbed.join(", ")}`;
+        } else {
+            successMessage = `Service ${servicesToEmbed[0]} embedded successfully`;
+        };
+
+        document.getElementById(styleId)?.remove();
+        
+        alert(successMessage);
 
         location.reload();
     })();
 
-    htmlDoc.style.cursor = null;
+    document.getElementById(styleId)?.remove();
 })();
