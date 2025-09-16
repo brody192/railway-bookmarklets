@@ -7,21 +7,18 @@ javascript: (async () => {
             return;
         };
 
+        const pathRegex = /^\/workspace\/templates\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/;
+
         const pathname = window.location.pathname;
 
-        if (pathname != "/compose") {
-            alert("Template compose page not found, do you have an edit page open?");
+        const match = pathname.match(pathRegex);
+
+        if (!match) {
+            alert("Template editor page not found, do you have an edit page open?");
             return;
         };
 
-        const params = new URLSearchParams(document.location.search);
-
-        const templateCode = params.get("code");
-
-        if (templateCode == null) {
-            alert("Template compose page found, but the template has not been saved yet");
-            return;
-        };
+        const currentTemplateId = match[1];
 
         const workspaceLocalStorageValue = localStorage.getItem("@railway/dashboard/workspace");
 
@@ -30,7 +27,7 @@ javascript: (async () => {
             return;
         };
 
-        const teamId = workspaceLocalStorageValue.split('"').join('');
+        const workspaceId = workspaceLocalStorageValue.split('"').join('');
 
         const gqlReq = async (options) => {
             const req = await fetch(`https://backboard.railway.com/graphql/internal?q=${options.operationName}`, {
@@ -68,11 +65,11 @@ javascript: (async () => {
         };
 
         const [currentTemplate, currentTemplateError] = await gqlReq({
-            operationName: "templateDetail",
+            operationName: "template",
             dataName: "template",
-            query: "query templateDetail($code: String!) {\n template(code: $code) {\n id\n code\n metadata\n config\n serializedConfig\n isV2Template\n }\n }",
+            query: "query template($owner: String, $repo: String, $code: String, $id: String) {\n  template(owner: $owner, repo: $repo, code: $code, id: $id) {\n    ...TemplateFields\n  }\n}\n\nfragment TemplateFields on Template {\n  ...TemplateMetadataFields\n  id\n  code\n  createdAt\n  demoProjectId\n  workspaceId\n  config\n  serializedConfig\n  canvasConfig\n  status\n  isApproved\n  isVerified\n  communityThreadSlug\n  isV2Template\n  health\n  projects\n  recentProjects\n}\n\nfragment TemplateMetadataFields on Template {\n  name\n  description\n  image\n  category\n  readme\n  tags\n  languages\n  guides {\n    post\n    video\n  }\n}",
             variables: {
-                "code": templateCode
+                "id": currentTemplateId
             },
         });
 
@@ -81,8 +78,7 @@ javascript: (async () => {
             return;
         };
 
-        const currentTemplateId = currentTemplate.id;
-        const currentTemplateName = currentTemplate.metadata.name;
+        const currentTemplateName = currentTemplate.name;
 
         let currentServices = [];
 
@@ -101,7 +97,7 @@ javascript: (async () => {
         const [sourceTemplate, sourceTemplateError] = await gqlReq({
             operationName: "templateDetail",
             dataName: "template",
-            query: "query templateDetail($code: String!) {\n template(code: $code) {\n id\n code\n metadata\n config\n serializedConfig\n isV2Template\n }\n }",
+            query: "query templateDetail($code: String!) {\n template(code: $code) {\n id\n code\n createdAt\n metadata\n config\n serializedConfig\n status\n isApproved\n isV2Template\n health\n projects\n services {\n edges {\n node {\n id\n config\n }\n }\n }\n activeProjects\n creator {\n name\n avatar\n username\n hasPublicProfile\n }\n }\n }",
             variables: {
                 "code": sourceTemplateInputCode
             },
@@ -109,11 +105,6 @@ javascript: (async () => {
 
         if (sourceTemplateError != null) {
             alert("Error retrieving data for source template" + "\n" + sourceTemplateError);
-            return;
-        };
-
-        if (!sourceTemplate.isV2Template) {
-            alert("Not a v2 Template");
             return;
         };
 
@@ -178,23 +169,22 @@ javascript: (async () => {
 
         htmlDoc.style.cursor = "wait";
 
-        const [templateUpdateV2, templateUpdateV2Error] = await gqlReq({
-            operationName: "templateUpdateV2",
-            query: "mutation templateUpdateV2($id: String!, $input: TemplateCreateV2Input!) {\n templateUpdateV2(id: $id, input: $input) {\n id\n }\n}",
+        const [templateUpsertConfig, templateUpsertConfigError] = await gqlReq({
+            operationName: "templateUpsertConfig",
+            query: "mutation templateUpsertConfig($id: String!, $input: TemplateUpsertConfigInput!) {\n  templateUpsertConfig(id: $id, input: $input) {\n    id\n    code\n  }\n}",
             variables: {
                 "id": currentTemplateId,
                 "input": {
-                    "metadata": {
-                        "name": currentTemplateName
-                    },
+                    "canvasConfig": currentTemplate.canvasConfig,
+                    "name": currentTemplateName,
                     "serializedConfig": newSerializedConfig,
-                    "teamId": teamId
+                    "workspaceId": workspaceId
                 }
             },
         });
 
-        if (templateUpdateV2Error != null) {
-            alert(`Error updating template ${currentTemplateName}` + "\n" + templateUpdateV2Error);
+        if (templateUpsertConfigError != null) {
+            alert(`Error updating template ${currentTemplateName}` + "\n" + templateUpsertConfigError);
             return;
         };
 
