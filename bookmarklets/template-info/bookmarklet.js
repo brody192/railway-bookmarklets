@@ -15,25 +15,37 @@ javascript: (async () => {
         return;
     };
 
-    const nextPageDataElement = document.getElementById("__NEXT_DATA__");
+    let templateCode = "";
 
-    if (nextPageDataElement == null) {
-        alert("No next page data found, perhaps this bookmarklet needs updating?");
-        return;
+    const deployPageRegex = /^\/deploy\/(.{3,})$/;
+
+    if (deployPageRegex.test(pathname)) {
+        const href = document.evaluate(
+            "//a[.//span[contains(text(), 'Deploy Now')]]/@href",
+            document,
+            null,
+            XPathResult.STRING_TYPE,
+            null
+          ).stringValue;
+
+          if (href == null || href == "") {
+            alert("No Deploy Now button found, perhaps this bookmarklet needs updating?");
+            return;
+          };
+          
+          templateCode = href.split("/").pop();
     };
 
-    const nextPageDataInnerText = nextPageDataElement.innerText;
+    const newTemplatePageRegex = /^\/new\/template\/(.{3,})$/;
 
-    const templateCodeRegex = /"code":"(.{3,}?)",/;
+    if (newTemplatePageRegex.test(pathname)) {
+        templateCode = pathname.split("/").pop();
+    };
 
-    const templateCodeMatch = templateCodeRegex.exec(nextPageDataInnerText);
-
-    if (templateCodeMatch == null) {
+    if (templateCode == "") {
         alert("No template code found, perhaps this bookmarklet needs updating?");
         return;
     };
-
-    const templateId = templateCodeMatch[1];
 
     const gqlReq = async (options) => {
         const req = await fetch(`https://backboard.railway.com/graphql/internal?q=${options.operationName}`, {
@@ -70,16 +82,12 @@ javascript: (async () => {
         return [res.data[dataName], null];
     };
 
-    // why are we making a call to the api to get the template details despite the details being part of the __NEXT_DATA__ you may ask?
-    // two reasons..
-    // __NEXT_DATA__ is cached, this api call wont be.
-    // depending on the size of the json __NEXT_DATA__ will be truncated.
     const [template, templateError] = await gqlReq({
         operationName: "templateDetail",
         dataName: "template",
         query: "query templateDetail($code: String!) {\n template(code: $code) {\n id\n code\n createdAt\n metadata\n config\n serializedConfig\n status\n isApproved\n isV2Template\n health\n projects\n services {\n edges {\n node {\n id\n config\n }\n }\n }\n activeProjects\n creator {\n name\n avatar\n username\n hasPublicProfile\n }\n }\n }",
         variables: {
-            "code": templateId
+            "code": templateCode
         },
     });
 
