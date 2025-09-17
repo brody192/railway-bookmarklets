@@ -78,13 +78,16 @@ javascript: (async () => {
 
         const currentTemplateName = currentTemplate.name;
 
-        let currentServices = [];
+        let currentServiceNames = [];
+        let currentServiceIds = [];
 
-        for (const service in currentTemplate.serializedConfig.services) {
-            currentServices.push(currentTemplate.serializedConfig.services[service].name);
+        for (const serviceId in currentTemplate.serializedConfig.services) {
+            currentServiceNames.push(currentTemplate.serializedConfig.services[serviceId].name);
+            currentServiceIds.push(serviceId);
         };
 
         const tryTrim = (input) => (typeof input == "string") ? input.trim() : input;
+
 
         const sourceTemplateInputCode = tryTrim(prompt("Enter the template's short code that contains the service you want to embed into this template"));
         if (sourceTemplateInputCode == null) {
@@ -147,11 +150,6 @@ javascript: (async () => {
         let servicesToEmbed = [];
         
         if (isAddAll) {
-            const conflictingServices = sourceServices.filter(service => currentServices.includes(service));
-            if (conflictingServices.length > 0) {
-                alert(`Cannot add all services. The following services already exist in ${currentTemplateName}:\n${conflictingServices.join(", ")}`);
-                return;
-            };
             servicesToEmbed = sourceServices;
         } else {
             const selections = serviceInput.split(",").map(s => s.trim()).filter(s => s.length > 0);
@@ -173,10 +171,6 @@ javascript: (async () => {
                     return;
                 };
                 
-                if (currentServices.includes(serviceToEmbed)) {
-                    alert(`Current template ${currentTemplateName} already contains the service ${serviceToEmbed}`);
-                    return;
-                };
                 
                 if (!servicesToEmbed.includes(serviceToEmbed)) {
                     servicesToEmbed.push(serviceToEmbed);
@@ -201,10 +195,28 @@ javascript: (async () => {
 
         let newSerializedConfig = currentTemplate.serializedConfig;
 
+        let renamedServices = [];
+        
         for (const serviceToEmbed of servicesToEmbed) {
+            const sourceServiceId = sourceServicesMap[serviceToEmbed];
             const uuid = crypto.randomUUID();
 
-            newSerializedConfig.services[uuid] = sourceTemplate.serializedConfig.services[sourceServicesMap[serviceToEmbed]];
+            if (currentServiceIds.includes(sourceServiceId)) {
+                alert(`Service with ID ${sourceServiceId} already exists in the current template. Skipping.`);
+                continue;
+            };
+
+            newSerializedConfig.services[uuid] = {...sourceTemplate.serializedConfig.services[sourceServiceId]};
+
+            let serviceName = newSerializedConfig.services[uuid].name;
+            if (currentServiceNames.includes(serviceName)) {
+                const originalName = serviceName;
+                const timeMid = uuid.split('-')[1];
+                serviceName = `${serviceName}-${timeMid}`;
+                newSerializedConfig.services[uuid].name = serviceName;
+                renamedServices.push(`${originalName} → ${serviceName}`);
+            };
+            currentServiceNames.push(serviceName);
 
             let newVolumeMounts = {};
 
@@ -253,6 +265,10 @@ javascript: (async () => {
             successMessage = `${servicesToEmbed.length} services embedded successfully: ${servicesToEmbed.join(", ")}`;
         } else {
             successMessage = `Service ${servicesToEmbed[0]} embedded successfully`;
+        };
+
+        if (renamedServices.length > 0) {
+            successMessage += `\n\nRenamed services to avoid conflicts:\n${renamedServices.join("\n")}`;
         };
 
         document.getElementById(styleId)?.remove();
