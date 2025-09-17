@@ -4,18 +4,57 @@ javascript: (async () => {
         return;
     };
 
-    const templateRegex = /^(?:\/new\/|\/)template\/(.{3,})$/;
+    const templatePageRegex = /^\/(?:template|deploy|new\/template)\/(.{3,})$/;
 
     const pathname = window.location.pathname;
 
-    const templateMatch = templateRegex.exec(pathname);
+    const templatePageMatch = templatePageRegex.exec(pathname);
 
-    if (templateMatch == null) {
-        alert("No template was found, do you have a template page open?");
+    if (templatePageMatch == null) {
+        alert("No template page found, do you have a template page open?");
         return;
     };
 
-    const templateId = templateMatch[1];
+    let templateCode = "";
+
+    const deployPageRegex = /^\/deploy\/(.{3,})$/;
+
+    if (deployPageRegex.test(pathname)) {
+        const href = document.evaluate(
+            "//a[.//span[contains(text(), 'Deploy Now')]]/@href",
+            document,
+            null,
+            XPathResult.STRING_TYPE,
+            null
+          ).stringValue;
+
+          if (href == null || href == "") {
+            alert("No Deploy Now button found, perhaps this bookmarklet needs updating?");
+            return;
+          };
+          
+          templateCode = href.split("/").pop();
+    };
+
+    const newTemplatePageRegex = /^\/new\/template\/(.{3,})$/;
+
+    if (newTemplatePageRegex.test(pathname)) {
+        templateCode = pathname.split("/").pop();
+    };
+
+    if (templateCode == "") {
+        alert("No template code found, perhaps this bookmarklet needs updating?");
+        return;
+    };
+
+    const workspaceLocalStorageValue = localStorage.getItem("@railway/dashboard/workspace");
+
+    if (workspaceLocalStorageValue == null) {
+        alert("Current workspace ID not found, perhaps this bookmarklet needs updating?");
+        return;
+    };
+
+    const workspaceId = workspaceLocalStorageValue.split('"').join('');
 
     const gqlReq = async (options) => {
         const req = await fetch(`https://backboard.railway.com/graphql/internal?q=${options.operationName}`, {
@@ -52,64 +91,127 @@ javascript: (async () => {
         return [res.data[dataName], null];
     };
 
+    const confirmation = confirm(
+        `This will clone the currently open template into your currently active workspace.\n\n` +
+        `Continue with cloning?`
+    );
+
+    if (!confirmation) {
+        return;
+    };
+
+    const styleId = "railway-bookmarklet-cursor";
+    const cursorStyle = document.createElement("style");
+    cursorStyle.id = styleId;
+    cursorStyle.innerHTML = "* { cursor: wait !important; }";
+    document.head.appendChild(cursorStyle);
+
     const [template, templateError] = await gqlReq({
         operationName: "templateDetail",
         dataName: "template",
-        query: "query templateDetail($code: String!) {\n template(code: $code) {\n id\n code\n createdAt\n metadata\n config\n serializedConfig\n status\n isApproved\n isV2Template\n health\n projects\n services {\n edges {\n node {\n id\n config\n }\n }\n }\n activeProjects\n creator {\n name\n avatar\n username\n hasPublicProfile\n }\n }\n }",
+        query: "query templateDetail($code: String) {\n  template(code: $code) {\n    ...TemplateFields\n  }\n}\n\nfragment TemplateFields on Template {\n  ...TemplateMetadataFields\n  id\n  code\n  createdAt\n  demoProjectId\n  workspaceId\n  config\n  serializedConfig\n  canvasConfig\n  status\n  isApproved\n  isVerified\n  communityThreadSlug\n  isV2Template\n  health\n  projects\n  recentProjects\n}\n\nfragment TemplateMetadataFields on Template {\n  name\n  description\n  image\n  category\n  readme\n  tags\n  languages\n  guides {\n    post\n    video\n  }\n}",
         variables: {
-            "code": templateId
+            "code": templateCode
         },
     });
 
     if (templateError != null) {
+        document.getElementById(styleId)?.remove();
         alert("Error retrieving data on current template" + "\n" + templateError);
         return;
     };
 
-    if (!template.isV2Template) {
-        alert("Not a v2 Template, use the v1 template cloning tool");
-        return;
+    template.name = `${template.name} (Clone)`;
+
+    const uuidMap = new Map();
+
+    const serializedConfigWithNewUUIDs = JSON.parse(JSON.stringify(template.serializedConfig));
+
+    if (serializedConfigWithNewUUIDs.services) {
+        const newServices = {};
+        
+        for (const [serviceId, serviceConfig] of Object.entries(serializedConfigWithNewUUIDs.services)) {
+            const newServiceId = crypto.randomUUID();
+            uuidMap.set(serviceId, newServiceId);
+            
+            const newServiceConfig = serviceConfig;
+            
+            if (newServiceConfig.volumeMounts) {
+                const newVolumeMounts = {};
+                
+                for (const [volumeId, volumeConfig] of Object.entries(newServiceConfig.volumeMounts)) {
+                    let newVolumeId;
+                    if (uuidMap.has(volumeId)) {
+                        newVolumeId = uuidMap.get(volumeId);
+                    } else {
+                        newVolumeId = crypto.randomUUID();
+                        uuidMap.set(volumeId, newVolumeId);
+                    };
+                    
+                    newVolumeMounts[newVolumeId] = volumeConfig;
+                };
+                
+                newServiceConfig.volumeMounts = newVolumeMounts;
+            };
+            
+            newServices[newServiceId] = newServiceConfig;
+        };
+        
+        serializedConfigWithNewUUIDs.services = newServices;
     };
 
-    template.metadata.name = `${template.metadata.name} (Clone)`;
-
-    const uuidV4Re = /[0-9(a-f|A-F)]{8}-[0-9(a-f|A-F)]{4}-4[0-9(a-f|A-F)]{3}-[89ab][0-9(a-f|A-F)]{3}-[0-9(a-f|A-F)]{12}/gm;
-
-    let serializedConfigString = JSON.stringify(template.serializedConfig);
-
-    const idMatches = serializedConfigString.match(uuidV4Re);
-
-    if (idMatches == null) {
-        alert("No ids found in template, something wen't really wrong");
-        return;
+    let canvasConfigWithNewUUIDs = null;
+    if (template.canvasConfig) {
+        canvasConfigWithNewUUIDs = JSON.parse(JSON.stringify(template.canvasConfig));
+        
+        if (canvasConfigWithNewUUIDs.positions) {
+            const newPositions = {};
+            
+            for (const [positionId, positionConfig] of Object.entries(canvasConfigWithNewUUIDs.positions)) {
+                const newPositionId = uuidMap.has(positionId) ? uuidMap.get(positionId) : positionId;
+                newPositions[newPositionId] = positionConfig;
+            };
+            
+            canvasConfigWithNewUUIDs.positions = newPositions;
+        };
+        
+        if (canvasConfigWithNewUUIDs.groupRefs) {
+            const newGroupRefs = {};
+            
+            for (const [groupId, serviceIds] of Object.entries(canvasConfigWithNewUUIDs.groupRefs)) {
+                if (Array.isArray(serviceIds)) {
+                    newGroupRefs[groupId] = serviceIds.map(id => uuidMap.has(id) ? uuidMap.get(id) : id);
+                } else {
+                    newGroupRefs[groupId] = serviceIds;
+                }
+            };
+            
+            canvasConfigWithNewUUIDs.groupRefs = newGroupRefs;
+        };
     };
 
-    let idMatchesUniq = [...new Set(idMatches)];
-
-    for (i in idMatchesUniq) {
-        serializedConfigString = serializedConfigString.replaceAll(idMatchesUniq[i], crypto.randomUUID());
-    };
-
-    const params = new URLSearchParams(document.location.search);
-
-    const teamId = (params.has("teamId") == true) ? params.get("teamId") : null;
-
-    const [templateCreateV2, templateCreateV2Error] = await gqlReq({
-        operationName: "templateCreateV2",
-        query: "mutation templateCreateV2($input: TemplateCreateV2Input!) {\n templateCreateV2(input: $input) {\n ...TemplateFields\n }\n}\n\nfragment TemplateFields on Template {\n id\n code\n createdAt\n demoProjectId\n userId\n teamId\n metadata\n config\n serializedConfig\n status\n isApproved\n communityThreadSlug\n isV2Template\n health\n projects\n services {\n edges {\n node {\n ...TemplateServiceFields\n }\n }\n }\n}\n\nfragment TemplateServiceFields on TemplateService {\n id\n config\n}",
+    const [templateUpsertConfig, templateUpsertConfigError] = await gqlReq({
+        operationName: "templateUpsertConfig",
+        query: "mutation templateUpsertConfig($id: String!, $input: TemplateUpsertConfigInput!) {\n  templateUpsertConfig(id: $id, input: $input) {\n    id\n    code\n  }\n}",
         variables: {
+            "id": crypto.randomUUID(),
             "input": {
+                "canvasConfig": canvasConfigWithNewUUIDs,
+                "name": template.name,
                 "metadata": template.metadata,
-                "serializedConfig": JSON.parse(serializedConfigString),
-                "teamId": teamId,
+                "serializedConfig": serializedConfigWithNewUUIDs,
+                "workspaceId": workspaceId,
             },
         },
     });
 
-    if (templateCreateV2Error != null) {
-        alert(`Error cloning template` + "\n" + templateCreateV2Error);
+    if (templateUpsertConfigError != null) {
+        document.getElementById(styleId)?.remove();
+        alert(`Error cloning template` + "\n" + templateUpsertConfigError);
         return;
     };
+
+    document.getElementById(styleId)?.remove();
 
     alert("Template cloned successfully");
 })();

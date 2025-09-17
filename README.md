@@ -2,6 +2,10 @@
 
 This repository contains the source code for the Railway bookmarklets.
 
+## Develop locally
+
+`ENV=dev go run .`
+
 ## Errors
 
 `failed to minify js file: found newlines in minified JS: file`

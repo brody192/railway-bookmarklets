@@ -88,7 +88,6 @@ javascript: (async () => {
 
         const tryTrim = (input) => (typeof input == "string") ? input.trim() : input;
 
-
         const sourceTemplateInputCode = tryTrim(prompt("Enter the template's short code that contains the service you want to embed into this template"));
         if (sourceTemplateInputCode == null) {
             alert("User canceled the prompt");
@@ -232,7 +231,6 @@ javascript: (async () => {
         };
 
         const styleId = "railway-bookmarklet-cursor";
-
         const cursorStyle = document.createElement("style");
         cursorStyle.id = styleId;
         cursorStyle.innerHTML = "* { cursor: wait !important; }";

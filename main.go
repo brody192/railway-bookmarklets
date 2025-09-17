@@ -2,6 +2,7 @@ package main
 
 import (
 	"cmp"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -42,6 +43,11 @@ func main() {
 
 	r.Get("/template-clone-v2", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/template-clone/", http.StatusMovedPermanently)
+	})
+
+	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprintln(w, "404 page not found - It's possible that what you are looking for is now a native feature")
 	})
 
 	handler.RegisterTrailing(r)
