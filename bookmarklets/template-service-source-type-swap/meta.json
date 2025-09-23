@@ -1,0 +1,16 @@
+{
+    "$schema": "../meta_schema.json",
+    "short_title": "Template Service Source Type Swap",
+    "title": "Template Service Source Type Swap",
+    "header_subtext": "This bookmarklet will swap the source type of a service in a template",
+    "bookmarklet_link_text": "Template Service Source Type Swap",
+    "include_instructions": true,
+    "custom_instructions": [
+        "Drag the link to your bookmarks bar",
+        "Open a template service page with URL format: /workspace/templates/<uuid>/service/<uuid>",
+        "Click on the bookmarklet",
+        "If the service uses an image source, you'll be prompted to enter a repository",
+        "If the service uses a repository source, you'll be prompted to enter an image",
+        "Confirm the swap and the template will be updated"
+    ]
+}
