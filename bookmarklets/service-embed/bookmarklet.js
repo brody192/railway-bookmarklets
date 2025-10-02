@@ -113,7 +113,7 @@ javascript: (async () => {
         let sourceServicesMap = {};
 
         for (const service in sourceTemplate.serializedConfig.services) {
-            sourceServicesMap[sourceTemplate.serializedConfig.services[service].name] = service
+            sourceServicesMap[sourceTemplate.serializedConfig.services[service].name] = service;
         };
 
         const sourceServices = Object.keys(sourceServicesMap);
@@ -123,8 +123,10 @@ javascript: (async () => {
         let sourceServiceList = "";
         let servicesByNumber = {};
 
-        sourceServiceList += `[*] Add All Services (${sourceServices.length} services)\n`;
-        sourceServiceList += `---\n`;
+        if (sourceServices.length > 1) {
+            sourceServiceList += `[*] Add All Services (${sourceServices.length} services)\n`;
+            sourceServiceList += `---\n`;
+        };
 
         for (const [i, service] of sourceServices.entries()) {
             const num = i + 1;
@@ -133,7 +135,9 @@ javascript: (async () => {
             if (i < sourceServices.length - 1) sourceServiceList += "\n";
         };
 
-        const serviceInput = tryTrim(prompt(`Enter service name(s), number(s), or * for all. Use commas for multiple (e.g., 1,3 or frontend,backend)\n${sourceServiceList}`, defaultService));
+        const promptMessage = sourceServices.length > 1 ? `Enter service name(s), number(s), or * for all. Use commas for multiple (e.g., 1,3 or frontend,backend)\n${sourceServiceList}` : `Enter service name or number\n${sourceServiceList}`;
+
+        const serviceInput = tryTrim(prompt(promptMessage, defaultService));
         if (serviceInput == null) {
             alert("User canceled the prompt");
             return;
